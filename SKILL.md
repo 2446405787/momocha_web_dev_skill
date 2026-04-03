@@ -107,6 +107,28 @@ eventBus.emit(EVENTS.ITEM_DROPPED, { uid, items, mapId: session.map_id })
 - Enums: `backend/src/constants/game.js`
 - Auth guard: imported and mounted per-route in `{name}.router.js`
 
+### Static Config vs. Hot-reloadable Config
+
+- **Static JS config** (`config/gameConfig.js`, `config/shopConfig.js`): for data that requires a server restart to change anyway (e.g., item definitions tightly coupled to game logic). These are plain JS files exporting arrays/objects.
+- **global_config (hot-reloadable)**: for any data that an admin might want to tune without restarting — reward weights, feature toggles, duration options, tree/item definitions, grid sizes, etc. Store as JSON strings and read with `globalConfigRepository.get(key)`.
+
+**Rule: if the data could reasonably need to change at runtime → put it in global_config, not a JS file.**
+
+```javascript
+// Write default in update.js
+db.prepare(`INSERT OR IGNORE INTO global_config (key, value) VALUES (?, ?)`)
+  .run('garden.trees', JSON.stringify([
+    { id: 'pine_common', nameKey: 'pine_common', rarity: 'WHITE', tier: 'LIGHT' },
+    // ...
+  ]))
+
+// Read in service
+const trees = JSON.parse(globalConfigRepository.get('garden.trees') ?? '[]')
+const size  = JSON.parse(globalConfigRepository.get('garden.size')  ?? '{"cols":9,"rows":9}')
+```
+
+Do **not** create a separate `{feature}Config.js` file for hot-reloadable data — use global_config instead.
+
 ### Database Migrations
 
 **Never modify `sqlite.js` to add new tables or config.** All incremental schema changes go into `backend/src/core/database/update.js`.
