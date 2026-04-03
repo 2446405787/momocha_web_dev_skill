@@ -377,6 +377,21 @@ const TREE_ASSETS_BY_NAME_KEY: Record<string, string> = {
 <img :src="TREE_ASSETS_BY_NAME_KEY[item.tree_def_id]" />
 ```
 
+### Auto-imports
+
+`useToast`、`useRouter`、`useI18n`、`ref`、`computed`、`watch` 等 Vue/Nuxt 核心函数均为**自动导入**，不需要写 import 语句。
+
+```typescript
+// ✅ 正确 — 直接使用
+const toast = useToast()
+const router = useRouter()
+
+// ❌ 错误 — 不要从 '#imports' 或其他路径手动导入
+import { useToast } from '#imports'   // 会报错
+```
+
+只有项目内部的模块（API 服务、类型、composable 等）才需要显式 import。
+
 ### i18n
 
 All user-visible strings go through `$t()`. Never hardcode display text.
