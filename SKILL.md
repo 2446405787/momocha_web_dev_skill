@@ -107,6 +107,32 @@ eventBus.emit(EVENTS.ITEM_DROPPED, { uid, items, mapId: session.map_id })
 - Enums: `backend/src/constants/game.js`
 - Auth guard: imported and mounted per-route in `{name}.router.js`
 
+### Database Migrations
+
+**Never modify `sqlite.js` to add new tables or config.** All incremental schema changes go into `backend/src/core/database/update.js`.
+
+Pattern — append inside the existing `db.exec(...)` block and add `INSERT OR IGNORE` lines for any new global_config defaults:
+
+```javascript
+// In update.js — append new tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS garden_tiles (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid        TEXT NOT NULL,
+    tree_def_id TEXT NOT NULL,
+    grid_x     INTEGER NOT NULL,
+    grid_y     INTEGER NOT NULL,
+    planted_at TEXT NOT NULL,
+    UNIQUE(uid, grid_x, grid_y)
+  );
+`);
+
+// In update.js — append new global_config defaults
+db.prepare(`INSERT OR IGNORE INTO global_config (key, value) VALUES (?, ?)`).run('garden.focus.options', '[25,50,90]');
+```
+
+After editing, run `node backend/src/core/database/update.js` once to apply. Add a `console.log("  OK ...")` line per change following the existing style.
+
 ### Pagination Pattern
 
 ```javascript
